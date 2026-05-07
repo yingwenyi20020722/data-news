@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间的褶皱 - 全章节体验版</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=Noto+Sans+SC:wght@300;700&display=swap');
+
+        :root {
+            --bg-dark: #0A0A0F;
+            --text-light: #F5F5F7;
+            --accent-blue: #165DFF;
+            --accent-gold: #D4AF37;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* 隐藏原生滚动条，更具艺术感 */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        /* 左侧时间轴导航 */
+        #time-axis {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        #time-axis::before {
+            content: ''; position: absolute;
+            left: 5px; top: 0; bottom: 0;
+            width: 1px; background: rgba(255,255,255,0.2);
+            z-index: -1;
+        }
+
+        .axis-node {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .axis-node.active {
+            background: var(--accent-gold);
+            box-shadow: 0 0 15px var(--accent-gold);
+            transform: scale(1.5);
+        }
+
+        .axis-node:hover::after {
+            content: attr(data-title);
+            position: absolute;
+            left: 25px; top: -5px;
+            font-size: 12px;
+            white-space: nowrap;
+            color: var(--accent-gold);
+            letter-spacing: 2px;
+        }
+
+        /* 章节通用设置 */
+        section {
+            min-height: 100vh;
+            width: 100vw;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 100px;
+        }
+
+        /* 首页：Canvas 粒子系统 */
+        #home {
+            position: relative;
+            overflow: hidden;
+        }
+        #canvas-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }
+        .scroll-hint {
+            position: absolute; bottom: 40px; z-index: 2;
+            font-size: 12px; letter-spacing: 4px; opacity: 0.6;
+            animation: pulse 2s infinite;
+        }
+
+        /* 章节一：过去（玻璃态3D卡片） */
+        #chapter1 { background: radial-gradient(circle at center, #1a1a24 0%, var(--bg-dark) 100%); }
+        .cards-container {
+            display: flex; gap: 30px; z-index: 2; perspective: 1000px;
+        }
+        .card {
+            width: 300px; height: 400px;
+            background: transparent;
+            cursor: pointer;
+        }
+        .card-inner {
+            position: relative; width: 100%; height: 100%;
+            text-align: center; transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+        .card:hover .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 30px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+        }
+        .card-front h3 { font-size: 24px; color: var(--accent-gold); margin-bottom: 10px;}
+        .card-back {
+            transform: rotateY(180deg);
+            background: rgba(212, 175, 55, 0.1);
+        }
+        .card-back p { font-size: 14px; line-height: 1.8; color: #ccc; }
+
+        /* 章节二：现在（流体背景模拟） */
+        #chapter2 {
+            background: linear-gradient(45deg, #0A0A0F, #165DFF, #8B5CF6, #0A0A0F);
+            background-size: 400% 400%;
+            animation: fluidGradient 15s ease infinite;
+        }
+        .present-content {
+            z-index: 2; max-width: 800px; text-align: center;
+            background: rgba(0,0,0,0.4); padding: 50px; border-radius: 20px;
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .present-content h2 { font-size: 48px; margin-bottom: 20px; font-weight: 300;}
+        .present-content p { font-size: 18px; line-height: 2; font-weight: 300;}
+
+        /* 章节三：未来（漂浮的节点） */
+        #chapter3 {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        .future-node {
+            position: absolute; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--accent-blue), transparent);
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.5);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* 章节四：折叠（时空交汇） */
+        #chapter4 {
+            background: var(--bg-dark);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .mobius-ring {
+            width: 300px; height: 300px;
+            border: 2px solid var(--text-light);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: morph 8s ease-in-out infinite alternate, rotate 15s linear infinite;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.2);
+        }
+        .mobius-text {
+            position: absolute; text-align: center; z-index: 10;
+        }
+
+        /* 页脚 */
+        footer {
+            height: 30vh; background: #000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .end-dot {
+            width: 8px; height: 8px; background: #fff; border-radius: 50%;
+            cursor: pointer; animation: blink 2s infinite;
+        }
+
+        /* 动画定义 */
+        @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        @keyframes fluidGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-30px) rotate(10deg); } 100% { transform: translateY(0px) rotate(0deg); } }
+        @keyframes morph { 0% { border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; } 100% { border-radius: 40% 60% 60% 40% / 50% 50% 50% 50%; } }
+        @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+    <nav id="time-axis">
+        <div class="axis-node active" data-title="起点" onclick="scrollToSec('home')"></div>
+        <div class="axis-node" data-title="过去" onclick="scrollToSec('chapter1')"></div>
+        <div class="axis-node" data-title="现在" onclick="scrollToSec('chapter2')"></div>
+        <div class="axis-node" data-title="未来" onclick="scrollToSec('chapter3')"></div>
+        <div class="axis-node" data-title="折叠" onclick="scrollToSec('chapter4')"></div>
+    </nav>
+
+    <section id="home">
+        <canvas id="canvas-container"></canvas>
+        <div class="scroll-hint">向下滚动，坠入时间</div>
+    </section>
+
+    <section id="chapter1">
+        <div class="cards-container">
+            <div class="card">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <h3>碎片 01</h3>
+                        <p>未被记录的微光</p>
+                    </div>
+                    <div class="card-back">
+                        <p>那些未被宏大叙事收录的凡人微光，看似渺小，却构成了时间底片上最坚实、最动人的底色。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <h3>碎片 02</h3>
+                        <p>跨越山海的印记</p>
+                    </div>
+                    <div class="card-back">
+                        <p>驼铃或长笛，沙漠或海浪。不同文明个体的日常悲喜交织在一起，连接成一条古老而崭新的纽带。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <h3>碎片 03</h3>
+                        <p>宿命与选择</p>
+                    </div>
+                    <div class="card-back">
+                        <p>星盘上既定的轨迹指向某种可能，但在每一个缝隙里，都藏着普通人通过挣扎与选择留下的温度。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="chapter2">
+        <div class="present-content">
+            <h2>流动的此刻</h2>
+            <p>一切都在发生。没有苦大仇深的沉重，只有温和而坚韧的流动。</p>
+            <br>
+            <p>此时此刻，脑海中无形的想法正流淌为可视的文字；而这些文字，将会在下一秒凝结为现实的行动，去触碰那些真正具有普世价值的情怀。</p>
+        </div>
+    </section>
+
+    <section id="chapter3">
+        <div class="future-node" style="width: 150px; height: 150px; top: 20%; left: 20%; animation-delay: 0s;"></div>
+        <div class="future-node" style="width: 80px; height: 80px; top: 60%; left: 70%; animation-delay: 1s;"></div>
+        <div class="future-node" style="width: 200px; height: 200px; top: 40%; left: 50%; animation-delay: 2s; background: radial-gradient(circle at 30% 30%, var(--accent-gold), transparent);"></div>
+        
+        <div style="z-index: 10; text-align: center;">
+            <h2 style="font-size: 3rem; font-weight: 900; letter-spacing: 5px;">未来的形态</h2>
+            <p style="margin-top: 20px; color: #888;">碰撞，交织，然后诞生。</p>
+        </div>
+    </section>
+
+    <section id="chapter4">
+        <div style="position: relative; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%;">
+            <div class="mobius-ring"></div>
+            <div class="mobius-text">
+                <h2 style="font-size: 2rem; color: var(--accent-gold);">时间是一个圆</h2>
+                <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.7;">过去、现在、未来在此重叠</p>
+            </div>
+        </div>
+    </section>
+
+    <footer id="footer">
+        <div class="end-dot" title="回到起点" onclick="scrollToSec('home')"></div>
+    </footer>
+
+    <script>
+        // --- 1. 时间轴滚动监听逻辑 ---
+        const sections = document.querySelectorAll('section, footer');
+        const navNodes = document.querySelectorAll('.axis-node');
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.5 // 当章节有一半进入视口时触发
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // 移除所有激活状态
+                    navNodes.forEach(node => node.classList.remove('active'));
+                    // 找到当前对应章节的导航节点并激活
+                    const index = Array.from(sections).findIndex(sec => sec.id === entry.target.id);
+                    if(navNodes[index]) {
+                        navNodes[index].classList.add('active');
+                    }
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(sec => observer.observe(sec));
+
+        // 点击导航跳转
+        function scrollToSec(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+
+        // --- 2. 首页 Canvas 粒子特效 (从上一版精简移植) ---
+        const canvas = document.getElementById('canvas-container');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        let particleArray = [];
+        const mouse = { x: null, y: null, radius: 100 };
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.x; mouse.y = e.y; });
+        window.addEventListener('mouseout', () => { mouse.x = undefined; mouse.y = undefined; });
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x + Math.random() * 100 - 50;
+                this.y = y + Math.random() * 100 - 50;
+                this.baseX = x; this.baseY = y;
+                this.size = Math.random() * 2 + 1;
+                this.color = color;
+                this.density = (Math.random() * 30) + 1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.closePath(); ctx.fill();
+            }
+            update() {
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    this.x -= (dx / distance) * force * this.density;
+                    this.y -= (dy / distance) * force * this.density;
+                } else {
+                    if (this.x !== this.baseX) this.x -= (this.x - this.baseX) / 10;
+                    if (this.y !== this.baseY) this.y -= (this.y - this.baseY) / 10;
+                }
+            }
+        }
+
+        function initParticles() {
+            particleArray = [];
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${Math.min(canvas.width / 8, 120)}px Inter, "Noto Sans SC", sans-serif`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('时间的褶皱', canvas.width / 2, canvas.height / 2);
+            
+            const textData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < textData.height; y += 7) {
+                for (let x = 0; x < textData.width; x += 7) {
+                    if (textData.data[(y * 4 * textData.width) + (x * 4) + 3] > 128) {
+                        let color = Math.random() > 0.8 ? '#D4AF37' : '#F5F5F7';
+                        particleArray.push(new Particle(x, y, color));
+                    }
+                }
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particleArray.length; i++) {
+                particleArray[i].draw(); particleArray[i].update();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        // 初始化
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        animateParticles();
+
+    </script>
+</body>
+</html>
